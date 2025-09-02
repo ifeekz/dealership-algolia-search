@@ -3,52 +3,43 @@
 import { usePathname } from "next/navigation";
 import { createInstantSearchNextInstance, InstantSearchNext } from 'react-instantsearch-nextjs';
 import { SearchBox, Configure, CurrentRefinements, ClearRefinements } from 'react-instantsearch';
-import { searchClient } from '@/configs/config';
+import { searchClient, srpIndex } from '@/configs/config';
 import SidebarFilters from './sidebar-filters';
-import InfiniteHits from './infinite-hits';
 import { routing } from '@/lib/algolia/custom-routing';
-import { refinementToFacetFilters } from '@/lib/algolia';
+import InfiniteHits from "./infinite-hits";
+import { refinementToUrl } from "@/lib/url-formatter";
 // import CarouselBanner from '@/components/inventory/CarouselBanner';
 
 const searchInstance = createInstantSearchNextInstance();
 
 export default function SearchClient({
-    indexName,
-    query,
-    serverHits,
-    serverFacets,
-    initialUiState,
+    facetFilters
 }: {
-    indexName: string;
-    query: string;
-    serverHits: any[];
-    serverFacets: any;
-    initialUiState: any;
+    facetFilters: any;
 }) {
     const pathname = usePathname();
-
-    // Derive facetFilters again on the client from the refinements in uiState
-    const refinementList = initialUiState?.[indexName]?.refinementList || {};
-    const facetFilters = refinementToFacetFilters(refinementList);
 
     return (
         <InstantSearchNext
             key={`is-${pathname}`}
             instance={searchInstance}
-            indexName={indexName}
+            indexName={srpIndex}
             searchClient={searchClient}
             ignoreMultipleHooksWarning={true}
             future={{
                 preserveSharedStateOnUnmount: true,
                 persistHierarchicalRootCount: true,
             }}
-            // initialUiState={initialUiState}
             routing={routing}
+            initialUiState={{
+                [srpIndex]: {
+                    query: "",
+                    refinementList: facetFilters ?? {},
+                },
+            }}
         >
             <Configure
-                query={query}
                 hitsPerPage={12}
-                facetFilters={facetFilters}
             />
             <div className="mt-28 py-1">
                 {/* <CarouselBanner /> */}
@@ -108,10 +99,10 @@ export default function SearchClient({
             <div className="flex-1 relative flex flex-col lg:flex-row">
                 <aside className="hidden lg:block lg:w-[280px] lg:flex-shrink-0 pt-4 sticky top-[120px] h-[calc(100vh-120px)] overflow-y-auto">
                     <h2 className="font-bold text-center uppercase">Search Filters</h2>
-                    <SidebarFilters serverFacets={serverFacets} />
+                    <SidebarFilters serverFacets={{}} />
                 </aside>
                 <main className="flex-1 space-y-2 bg-gray-100 p-4">
-                    <InfiniteHits serverHits={serverHits} />
+                    <InfiniteHits serverHits={[]} />
                 </main>
             </div>
         </InstantSearchNext>
